@@ -102,3 +102,10 @@ func TokenFromFile(filepath string) (*oauth2.Token, error) {
 
 	return token, nil
 }
+
+// ServiceWithToken creates and returns a service with the token source
+func ServiceWithToken(cnf *oauth2.Config, token *oauth2.Token) (srv *gmail.Service, err error) {
+	ctx := context.Background()
+	tknSrc := cnf.TokenSource(ctx, token)
+	return gmail.NewService(ctx, option.WithTokenSource(tknSrc))
+}
