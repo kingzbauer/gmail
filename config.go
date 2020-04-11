@@ -40,7 +40,7 @@ func InitPushNotification(srv *gmail.Service, userID string, watchRequest *gmail
 // If the tokenFile exist, we fetch it from there
 func GetUserToken(configPath string, tokenFile string) (*oauth2.Token, error) {
 	// Try out an existing token file if provided
-	if len(tokenFile) == 0 {
+	if len(tokenFile) > 0 {
 		if token, err := TokenFromFile(tokenFile); err == nil {
 			return token, nil
 		}
@@ -58,10 +58,11 @@ func GetUserToken(configPath string, tokenFile string) (*oauth2.Token, error) {
 
 	// TODO: have a function to generate random state
 	url := cnf.AuthCodeURL("some-random-state", oauth2.AccessTypeOffline)
-	fmt.Printf("Copy and paste this URL to your browser and then paste the code received after authorization\n")
+	fmt.Printf("Copy and paste this URL to your browser and then paste the code received after authorization\n%s\n", url)
 
 	var code string
-	_, err := fmt.Scanf("Code: %s", &code)
+	fmt.Printf("Code: ")
+	_, err = fmt.Scan(&code)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func GetUserToken(configPath string, tokenFile string) (*oauth2.Token, error) {
 
 // TokenToFile saves the given token to file
 func TokenToFile(filepath string, token *oauth2.Token) error {
-	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}

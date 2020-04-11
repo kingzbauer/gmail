@@ -1,2 +1,5 @@
 # ignore vim generated files
 *.sw?
+
+# ignore json files
+*.json
