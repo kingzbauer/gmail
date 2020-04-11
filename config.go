@@ -2,7 +2,10 @@ package gmail
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -34,9 +37,67 @@ func InitPushNotification(srv *gmail.Service, userID string, watchRequest *gmail
 }
 
 // GetUserToken performs an oauth2 verification. The user is directed to an authentication and authorization page
-func GetUserToken(configPath string) (*oauth2.Token, error) {
+// If the tokenFile exist, we fetch it from there
+func GetUserToken(configPath string, tokenFile string) (*oauth2.Token, error) {
+	// Try out an existing token file if provided
+	if len(tokenFile) == 0 {
+		if token, err := TokenFromFile(tokenFile); err == nil {
+			return token, nil
+		}
+	}
+
 	creds, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
+
+	cnf, err := google.ConfigFromJSON(creds, gmail.GmailReadonlyScope)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: have a function to generate random state
+	url := cnf.AuthCodeURL("some-random-state", oauth2.AccessTypeOffline)
+	fmt.Printf("Copy and paste this URL to your browser and then paste the code received after authorization\n")
+
+	var code string
+	_, err := fmt.Scanf("Code: %s", &code)
+	if err != nil {
+		return nil, err
+	}
+
+	// Let's exchange the code for an access token
+	ctx := context.Background()
+	token, err := cnf.Exchange(ctx, code, oauth2.AccessTypeOffline)
+	if err != nil {
+		return nil, err
+	}
+	return token, err
+}
+
+// TokenToFile saves the given token to file
+func TokenToFile(filepath string, token *oauth2.Token) error {
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return json.NewEncoder(f).Encode(token)
+}
+
+// TokenFromFile reads a token from the provided file
+func TokenFromFile(filepath string) (*oauth2.Token, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	token := &oauth2.Token{}
+	if err := json.NewDecoder(f).Decode(token); err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
