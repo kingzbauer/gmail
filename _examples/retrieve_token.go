@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/kingzbauer/gmail"
+	"github.com/kingzbauer/gmail/auth"
 )
 
 var (
@@ -26,8 +26,8 @@ func main() {
 		log.Fatal("c flag is required")
 	}
 
-	tkn, err := gmail.GetUserToken(*cnfFile, *tknFile)
+	tkn, err := auth.GetUserToken(*cnfFile, *tknFile)
 	chk("Retrieve user token", err)
-	err = gmail.TokenToFile(*tknFile, tkn)
+	err = auth.TokenToFile(*tknFile, tkn)
 	chk("Save token", err)
 }
