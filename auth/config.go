@@ -14,8 +14,8 @@ import (
 	"google.golang.org/api/option"
 )
 
-// GetConfig reads the service account json key file and returns an oauth2 configuration
-func GetConfig(filepath string) (*jwt.Config, error) {
+// GetJWTConfig reads the service account json key file and returns an oauth2 configuration
+func GetJWTConfig(filepath string) (*jwt.Config, error) {
 	content, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return nil, err
@@ -28,12 +28,6 @@ func GetConfig(filepath string) (*jwt.Config, error) {
 func NewService(src oauth2.TokenSource) (*gmail.Service, error) {
 	ctx := context.Background()
 	return gmail.NewService(ctx, option.WithTokenSource(src))
-}
-
-// InitPushNotification makes a watch call to gmail api for it to start triggering push notifications
-func InitPushNotification(srv *gmail.Service, userID string, watchRequest *gmail.WatchRequest) (*gmail.WatchResponse, error) {
-	call := srv.Users.Watch(userID, watchRequest)
-	return call.Do()
 }
 
 // GetUserToken performs an oauth2 verification. The user is directed to an authentication and authorization page
@@ -108,4 +102,13 @@ func ServiceWithToken(cnf *oauth2.Config, token *oauth2.Token) (srv *gmail.Servi
 	ctx := context.Background()
 	tknSrc := cnf.TokenSource(ctx, token)
 	return gmail.NewService(ctx, option.WithTokenSource(tknSrc))
+}
+
+// GetClientConfig reads the json contents containing gc credentials
+func GetClientConfig(filepath string) (*oauth2.Config, error) {
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	return google.ConfigFromJSON(data, gmail.GmailReadonlyScope)
 }
